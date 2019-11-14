@@ -17,6 +17,9 @@
     "CHANGELOG",
     "README.md"
   ],
+  "jest": {
+    "testEnvironment": "node"
+  },
   "scripts": {
     "tsc": "rm -rf lib/ && tsc",
     "build": "rm -rf dist/ && node ./scripts/build.js",

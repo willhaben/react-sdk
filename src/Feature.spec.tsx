@@ -54,6 +54,7 @@ describe('<OptimizelyFeature>', () => {
       },
     } as unknown) as ReactSDKClient
   })
+
   it('throws an error when not rendered in the context of an OptimizelyProvider', () => {
     expect(() => {
       // @ts-ignore
@@ -63,6 +64,62 @@ describe('<OptimizelyFeature>', () => {
         </OptimizelyFeature>,
       )
     }).toThrow()
+  })
+
+  it('with mounting <OptimizelyProvider> as the root - should render after onReady() when the context is provided via mount options james', async () => {
+    const component = mount(
+      <OptimizelyProvider optimizely={optimizelyMock}>
+        <OptimizelyFeature feature="feature1">
+          {(isEnabled, variables) =>
+            `${isEnabled ? 'true' : 'false'}|${variables.foo}`
+          }
+        </OptimizelyFeature>
+      </OptimizelyProvider>,
+    )
+
+    expect(optimizelyMock.onReady).toHaveBeenCalledWith({ timeout: undefined })
+
+    // while it's waiting for onReady()
+    expect(component.text()).toBe('')
+    resolver.resolve({ success: true })
+
+    await optimizelyMock.onReady()
+
+    component.update()
+
+    expect(optimizelyMock.isFeatureEnabled).toHaveBeenCalledWith('feature1')
+    expect(optimizelyMock.getFeatureVariables).toHaveBeenCalledWith('feature1')
+    expect(component.text()).toBe('true|bar')
+  })
+
+  it('with wrappingComponent/wrappingComponentProps - should render after onReady() when the context is provided via mount options james', async () => {
+    const component = mount(
+      <OptimizelyFeature feature="feature1">
+        {(isEnabled, variables) =>
+          `${isEnabled ? 'true' : 'false'}|${variables.foo}`
+        }
+      </OptimizelyFeature>,
+      {
+        wrappingComponent: OptimizelyProvider,
+        wrappingComponentProps: {
+          optimizely: optimizelyMock,
+        },
+      }
+    )
+
+    expect(optimizelyMock.onReady).toHaveBeenCalledWith({ timeout: undefined })
+
+    // while it's waiting for onReady() 
+    expect(component.text()).toBe('')
+    resolver.resolve({ success: true })
+
+    await optimizelyMock.onReady()
+
+    component.update()
+
+    expect(optimizelyMock.isFeatureEnabled).toHaveBeenCalledWith('feature1')
+    expect(optimizelyMock.getFeatureVariables).toHaveBeenCalledWith('feature1')
+    expect(component.text()).toBe('true|bar')
   })
 
   describe('when the isServerSide prop is false', () => {
